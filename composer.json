@@ -1,0 +1,51 @@
+{
+  "name": "zynqa/filament-jira-feedback",
+  "description": "A FilamentPHP v3 package to collect user feedback and automatically create Jira issues",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "laravel",
+    "filament",
+    "filamentphp",
+    "jira",
+    "feedback",
+    "beta",
+    "bug-reporting",
+    "widget"
+  ],
+  "authors": [
+    {
+      "name": "Raul Watson",
+      "email": "raul@zynqa.com"
+    }
+  ],
+  "require": {
+    "php": "^8.2",
+    "filament/filament": "^3.0",
+    "illuminate/support": "^11.0",
+    "guzzlehttp/guzzle": "^7.0"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^9.0",
+    "phpunit/phpunit": "^11.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Zynqa\\FilamentJiraFeedback\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Zynqa\\FilamentJiraFeedback\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Zynqa\\FilamentJiraFeedback\\FilamentJiraFeedbackServiceProvider"
+      ]
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

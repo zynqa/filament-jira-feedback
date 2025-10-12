@@ -236,6 +236,36 @@ Common options:
 
 The package automatically fetches all available issue types from your Jira project. This ensures that the feedback form always shows the correct issue types configured in your Jira instance.
 
+#### Filtering Issue Types
+
+You can control which issue types appear in the feedback form using two approaches:
+
+**1. Whitelist (Allowed Types)**
+
+Show only specific issue types by setting `allowed_types`:
+
+```php
+'issue' => [
+    'allowed_types' => ['Bug', 'Story', 'Task'], // Only show these types
+    'excluded_types' => [], // Ignored when allowed_types is set
+    // ...
+],
+```
+
+**2. Blacklist (Excluded Types)**
+
+Hide specific issue types while showing all others:
+
+```php
+'issue' => [
+    'allowed_types' => null, // Must be null for exclusions to work
+    'excluded_types' => ['Epic', 'Sub-task'], // Hide these types
+    // ...
+],
+```
+
+**Note:** If `allowed_types` is set, `excluded_types` is ignored. Set `allowed_types` to `null` to use exclusions instead.
+
 #### Adding Custom Descriptions
 
 You can optionally add helpful descriptions to your issue types to guide users in selecting the right type. These descriptions appear in the dropdown as `"Issue Type - Description"`.
@@ -244,6 +274,10 @@ Edit `config/filament-jira-feedback.php`:
 
 ```php
 'issue' => [
+    // Filtering (optional)
+    'allowed_types' => null,
+    'excluded_types' => [],
+
     // Custom descriptions for issue types (optional)
     // The keys should match the issue type names from your Jira project
     'type_descriptions' => [
@@ -260,9 +294,10 @@ Edit `config/filament-jira-feedback.php`:
 
 **How it works:**
 - Issue types are fetched dynamically from Jira and cached for 1 hour
+- Filtering is applied before displaying the types
 - If a description is configured for an issue type, it displays as: `"Bug - Report a software defect or error"`
 - If no description is configured, the issue type displays as just: `"Bug"`
-- All issue types from your Jira project will appear, regardless of whether they have descriptions
+- All filtered issue types will appear, regardless of whether they have descriptions
 
 **Note:** Issue type names are case-sensitive and must exactly match the names in your Jira project.
 

@@ -36,11 +36,19 @@ return [
     |--------------------------------------------------------------------------
     |
     | Configure the default settings for issues created from feedback.
-    | Issue types are fetched dynamically from Jira, but you can provide
-    | custom descriptions for each type below.
+    | Issue types are fetched dynamically from Jira, but you can filter
+    | which types appear in the form and provide custom descriptions.
     |
     */
     'issue' => [
+        // Filter which issue types to display (optional)
+        // Leave null to show all types from Jira
+        'allowed_types' => null, // Example: ['Bug', 'Story', 'Task'] to only show these types
+
+        // Exclude specific issue types (optional)
+        // Only applies when allowed_types is null
+        'excluded_types' => ['Story', 'Task', 'Epic', 'Sub-task', 'Emailed request', 'Employee', 'Submit a request or incident', 'Service Request', 'Service Request with Approvals'], // Example: ['Epic', 'Sub-task'] to hide these types
+
         // Custom descriptions for issue types (optional)
         // The keys should match the issue type names from your Jira project
         'type_descriptions' => [

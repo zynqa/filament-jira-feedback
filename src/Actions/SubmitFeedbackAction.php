@@ -168,6 +168,9 @@ class SubmitFeedbackAction
             // Fetch issue types from Jira
             $jiraIssueTypes = $jiraService->getProjectIssueTypes();
 
+            // Apply filtering based on configuration
+            $jiraIssueTypes = self::filterIssueTypes($jiraIssueTypes);
+
             // Get configured descriptions
             $descriptions = config('filament-jira-feedback.issue.type_descriptions', []);
 
@@ -199,6 +202,35 @@ class SubmitFeedbackAction
 
             return $options;
         }
+    }
+
+    /**
+     * Filter issue types based on allowed_types and excluded_types configuration.
+     *
+     * @param  array<string, string>  $issueTypes
+     * @return array<string, string>
+     */
+    protected static function filterIssueTypes(array $issueTypes): array
+    {
+        $allowedTypes = config('filament-jira-feedback.issue.allowed_types');
+        $excludedTypes = config('filament-jira-feedback.issue.excluded_types', []);
+
+        // If allowed_types is configured, use it as a whitelist
+        if (is_array($allowedTypes) && ! empty($allowedTypes)) {
+            return array_filter($issueTypes, function ($typeName) use ($allowedTypes) {
+                return in_array($typeName, $allowedTypes, true);
+            }, ARRAY_FILTER_USE_KEY);
+        }
+
+        // Otherwise, use excluded_types as a blacklist
+        if (is_array($excludedTypes) && ! empty($excludedTypes)) {
+            return array_filter($issueTypes, function ($typeName) use ($excludedTypes) {
+                return ! in_array($typeName, $excludedTypes, true);
+            }, ARRAY_FILTER_USE_KEY);
+        }
+
+        // No filtering - return all types
+        return $issueTypes;
     }
 
     /**

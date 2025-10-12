@@ -1,422 +1,182 @@
 # Filament Jira Feedback
 
-A **FilamentPHP** package to collect user feedback and automatically create Jira issues. Perfect for beta testing, feature requests, bug reports, and general user feedback directly from your Filament admin panel.
+A FilamentPHP package to collect user feedback and automatically create Jira issues. Perfect for beta testing, feature requests, bug reports, and general user feedback.
 
 ## Features
 
-- **Filament-Native**: Built specifically for FilamentPHP v3 using Filament components
-- **Auto-Positioned**: Automatically displays at the top of pages using Filament render hooks
-- **Flexible Positioning**: Easily customize banner position using render hooks
-- **Filament Actions**: Uses Filament's modal and form system for a seamless experience
-- **Filament Notifications**: Beautiful success/error notifications that match your theme
-- **Dark Mode Support**: Automatically adapts to Filament's dark mode
-- **Jira Integration**: Automatically creates Jira issues from user feedback
-- **Fully Configurable**: Customize colors, icons, messages, and issue types
-- **User Context**: Automatically includes authenticated user information
-- **Flexible Authentication**: Support for both authenticated and anonymous feedback
+- **Zero Configuration**: Automatically displays feedback banner at the top of all Filament pages
+- **Filament Native**: Built with Filament components, forms, modals, and notifications
+- **Dark Mode Support**: Automatically adapts to your Filament theme
+- **Dynamic Issue Types**: Fetches issue types from your Jira project with filtering and custom descriptions
+- **Flexible Positioning**: Position banner anywhere using Filament render hooks
+- **User Context**: Includes authenticated user information with feedback
+- **Fully Customizable**: Colors, icons, messages, and positioning
 
 ## Requirements
 
-- PHP 8.2 or higher
-- Laravel 11.0 or higher
-- FilamentPHP v3.0 or higher
-- A Jira Cloud account with API access
+- PHP 8.2+
+- Laravel (compatible with Laravel 11+)
+- FilamentPHP (see `composer.json` for version compatibility)
+- Jira Cloud account with API access
 
 ## Installation
-
-### 1. Install the package via Composer
 
 ```bash
 composer require zynqa/filament-jira-feedback
 ```
 
-### 2. Publish the configuration file
+### Publish Configuration
 
 ```bash
 php artisan vendor:publish --tag=filament-jira-feedback-config
 ```
 
-This will create a `config/filament-jira-feedback.php` file.
+### Configure Environment Variables
 
-### 3. Configure your environment variables
-
-Add the following to your `.env` file:
+Add to your `.env` file:
 
 ```env
-# Enable or disable the feedback widget
-FILAMENT_JIRA_FEEDBACK_ENABLED=true
-
-# Jira Configuration
+# Required
 FILAMENT_JIRA_FEEDBACK_URL=https://your-domain.atlassian.net
 FILAMENT_JIRA_FEEDBACK_EMAIL=your-email@domain.com
 FILAMENT_JIRA_FEEDBACK_API_TOKEN=your-jira-api-token
 FILAMENT_JIRA_FEEDBACK_PROJECT_KEY=FEEDBACK
 
-# Optional: Customize the banner
-FILAMENT_JIRA_FEEDBACK_BANNER_MESSAGE="This app is in beta testing. Please report any issues"
+# Optional
+FILAMENT_JIRA_FEEDBACK_ENABLED=true
+FILAMENT_JIRA_FEEDBACK_BANNER_MESSAGE="Help us improve by reporting issues"
 FILAMENT_JIRA_FEEDBACK_BUTTON_LABEL="Submit Feedback"
-FILAMENT_JIRA_FEEDBACK_COLOR=warning
-FILAMENT_JIRA_FEEDBACK_ICON=heroicon-o-exclamation-triangle
-
-# Optional: Require authentication
+FILAMENT_JIRA_FEEDBACK_COLOR=info
+FILAMENT_JIRA_FEEDBACK_ICON=heroicon-o-information-circle
 FILAMENT_JIRA_FEEDBACK_REQUIRE_AUTH=false
-
-# Optional: Default priority for created issues
 FILAMENT_JIRA_FEEDBACK_DEFAULT_PRIORITY=Medium
 ```
 
-### 4. Get your Jira API Token
+### Get Your Jira API Token
 
 1. Log in to your Atlassian account
 2. Go to [https://id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
 3. Click "Create API token"
-4. Give it a name and copy the token
-5. Add it to your `.env` file as `FILAMENT_JIRA_FEEDBACK_API_TOKEN`
+4. Copy the token and add it to your `.env` file
 
-### 5. Banner Positioning (Automatic)
-
-**The feedback banner automatically appears at the top of all Filament pages** using Filament's render hooks. No additional registration is required!
-
-The package registers itself using `PanelsRenderHook::BODY_START` by default, which positions the banner at the very top of the page body.
-
-If you want to customize the position, see the "Customizing Banner Position" section below.
+That's it! The feedback banner will automatically appear at the top of your Filament pages.
 
 ## Usage
 
 ### Basic Usage
 
-Once installed and configured, the feedback banner widget will automatically appear on your Filament dashboard. Users can click the "Submit Feedback" button to open a modal with a form.
+Users can click the "Submit Feedback" button to open a modal with a form. The form includes:
+- Issue type dropdown (dynamically fetched from Jira)
+- Title field
+- Description field
 
-### Using the Action Anywhere
+Upon submission, a Jira issue is automatically created with user context.
 
-You can use the feedback action in any Filament resource, page, or custom widget:
+### Using the Action Component
+
+Use the feedback action in any Filament resource, page, or widget:
 
 ```php
 use Zynqa\FilamentJiraFeedback\Actions\SubmitFeedbackAction;
 
-// In a Filament Resource
 protected function getHeaderActions(): array
 {
     return [
         SubmitFeedbackAction::make(),
     ];
 }
-
-// In a custom widget
-public function getActions(): array
-{
-    return [
-        SubmitFeedbackAction::make(),
-    ];
-}
 ```
 
-### Customizing Banner Position
+## Customization
 
-By default, the banner appears at the very top of the page body. You can customize this position using Filament's render hooks.
+### Banner Position
 
-#### Step 1: Disable Auto-Registration
+By default, the banner appears at the top of the page. To customize:
 
-First, disable the automatic registration by setting `enabled` to `false` in your config:
-
-```php
-// config/filament-jira-feedback.php
-'enabled' => false,
-```
-
-Or via `.env`:
-
+1. Disable auto-registration in `.env`:
 ```env
 FILAMENT_JIRA_FEEDBACK_ENABLED=false
 ```
 
-#### Step 2: Register at Custom Position
-
-In your Panel Provider (e.g., `app/Providers/Filament/AppPanelProvider.php`), register the banner at your desired position:
-
+2. Register at custom position in your Panel Provider:
 ```php
-use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
 
-public function panel(Panel $panel): Panel
-{
-    return $panel
-        // ... your panel configuration
-        ->renderHook(
-            PanelsRenderHook::BODY_START, // or any other hook
-            fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
-        );
-}
-```
-
-#### Available Render Hook Positions
-
-Filament provides several render hooks for positioning content:
-
-**Page Structure Hooks:**
-- `PanelsRenderHook::BODY_START` - Top of page body (default)
-- `PanelsRenderHook::BODY_END` - Bottom of page body
-- `PanelsRenderHook::CONTENT_START` - Top of main content area
-- `PanelsRenderHook::CONTENT_END` - Bottom of main content area
-
-**Header Hooks:**
-- `PanelsRenderHook::TOPBAR_START` - Start of top navigation bar
-- `PanelsRenderHook::TOPBAR_END` - End of top navigation bar
-- `PanelsRenderHook::USER_MENU_BEFORE` - Before user menu dropdown
-- `PanelsRenderHook::USER_MENU_AFTER` - After user menu dropdown
-
-**Sidebar Hooks:**
-- `PanelsRenderHook::SIDEBAR_NAV_START` - Top of sidebar navigation
-- `PanelsRenderHook::SIDEBAR_NAV_END` - Bottom of sidebar navigation
-
-**Footer Hooks:**
-- `PanelsRenderHook::FOOTER` - Page footer area
-
-#### Common Placement Examples
-
-**Position below the top navigation bar:**
-
-```php
 ->renderHook(
-    PanelsRenderHook::CONTENT_START,
+    PanelsRenderHook::CONTENT_START, // or any other hook
     fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
 )
 ```
 
-**Position at the bottom of the page:**
+**Available hooks:** `BODY_START`, `BODY_END`, `CONTENT_START`, `CONTENT_END`, `TOPBAR_START`, `TOPBAR_END`, `SIDEBAR_NAV_START`, `SIDEBAR_NAV_END`, `FOOTER`
 
-```php
-->renderHook(
-    PanelsRenderHook::BODY_END,
-    fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
-)
-```
+### Colors
 
-**Position in the sidebar navigation:**
-
-```php
-->renderHook(
-    PanelsRenderHook::SIDEBAR_NAV_END,
-    fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
-)
-```
-
-**Multiple positions (e.g., both top and bottom):**
-
-```php
-public function panel(Panel $panel): Panel
-{
-    return $panel
-        // ... your configuration
-        ->renderHook(
-            PanelsRenderHook::BODY_START,
-            fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
-        )
-        ->renderHook(
-            PanelsRenderHook::FOOTER,
-            fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
-        );
-}
-```
-
-**Conditional positioning based on user role:**
-
-```php
-->renderHook(
-    PanelsRenderHook::CONTENT_START,
-    fn (): string => auth()->user()?->hasRole('beta-tester')
-        ? Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
-        : ''
-)
-```
-
-### Customizing Colors
-
-#### Using Preset Color Schemes
-
-Filament supports these preset color options:
-- `danger` - Red
-- `warning` - Amber (default)
-- `success` - Green
-- `info` - Blue
-- `primary` - Your theme's primary color
-- `secondary` - Your theme's secondary color
-- `gray` - Gray
-
-Set in config or `.env`:
-
+Use preset colors:
 ```env
-FILAMENT_JIRA_FEEDBACK_COLOR=info
+FILAMENT_JIRA_FEEDBACK_COLOR=info # danger, warning, success, info, primary, secondary, gray
 ```
 
-#### Using Custom Colors (Advanced)
-
-For complete control over the banner appearance, you can define custom Tailwind CSS classes for both light and dark modes. This overrides the preset color scheme.
-
-Add to your `.env`:
-
+Or define custom Tailwind classes for light and dark modes:
 ```env
-# Light Mode Colors
+# Light Mode
 FILAMENT_JIRA_FEEDBACK_BG=bg-blue-50
 FILAMENT_JIRA_FEEDBACK_TEXT=text-blue-900
 FILAMENT_JIRA_FEEDBACK_BORDER=border-blue-600
 FILAMENT_JIRA_FEEDBACK_ICON_COLOR=text-blue-600
 
-# Dark Mode Colors
+# Dark Mode
 FILAMENT_JIRA_FEEDBACK_BG_DARK=bg-blue-950/50
 FILAMENT_JIRA_FEEDBACK_TEXT_DARK=text-blue-100
 FILAMENT_JIRA_FEEDBACK_BORDER_DARK=border-blue-400
 FILAMENT_JIRA_FEEDBACK_ICON_COLOR_DARK=text-blue-400
 ```
 
-**Available Options:**
-- `FILAMENT_JIRA_FEEDBACK_BG` - Background color (light mode)
-- `FILAMENT_JIRA_FEEDBACK_TEXT` - Text color (light mode)
-- `FILAMENT_JIRA_FEEDBACK_BORDER` - Left border color (light mode)
-- `FILAMENT_JIRA_FEEDBACK_ICON_COLOR` - Icon color (light mode)
-- `FILAMENT_JIRA_FEEDBACK_BG_DARK` - Background color (dark mode)
-- `FILAMENT_JIRA_FEEDBACK_TEXT_DARK` - Text color (dark mode)
-- `FILAMENT_JIRA_FEEDBACK_BORDER_DARK` - Left border color (dark mode)
-- `FILAMENT_JIRA_FEEDBACK_ICON_COLOR_DARK` - Icon color (dark mode)
-
-**Tips for Custom Colors:**
-- Use lighter backgrounds (`*-50`, `*-100`) in light mode for readability
-- Use darker backgrounds (`*-950/50`, `*-900/50`) in dark mode
-- Ensure sufficient contrast between text and background
-- Use `/50` opacity for dark mode backgrounds for a subtle effect
-- Test in both light and dark modes to ensure good visibility
-
-**Example Color Combinations:**
-
-Emerald Green:
-```env
-FILAMENT_JIRA_FEEDBACK_BG=bg-emerald-50
-FILAMENT_JIRA_FEEDBACK_TEXT=text-emerald-900
-FILAMENT_JIRA_FEEDBACK_BORDER=border-emerald-600
-FILAMENT_JIRA_FEEDBACK_ICON_COLOR=text-emerald-600
-FILAMENT_JIRA_FEEDBACK_BG_DARK=bg-emerald-950/50
-FILAMENT_JIRA_FEEDBACK_TEXT_DARK=text-emerald-100
-FILAMENT_JIRA_FEEDBACK_BORDER_DARK=border-emerald-400
-FILAMENT_JIRA_FEEDBACK_ICON_COLOR_DARK=text-emerald-400
-```
-
-Purple:
-```env
-FILAMENT_JIRA_FEEDBACK_BG=bg-purple-50
-FILAMENT_JIRA_FEEDBACK_TEXT=text-purple-900
-FILAMENT_JIRA_FEEDBACK_BORDER=border-purple-600
-FILAMENT_JIRA_FEEDBACK_ICON_COLOR=text-purple-600
-FILAMENT_JIRA_FEEDBACK_BG_DARK=bg-purple-950/50
-FILAMENT_JIRA_FEEDBACK_TEXT_DARK=text-purple-100
-FILAMENT_JIRA_FEEDBACK_BORDER_DARK=border-purple-400
-FILAMENT_JIRA_FEEDBACK_ICON_COLOR_DARK=text-purple-400
-```
-
-### Customizing Icons
+### Icons
 
 Use any Heroicon:
-
 ```env
 FILAMENT_JIRA_FEEDBACK_ICON=heroicon-o-bug-ant
 ```
 
-Common options:
-- `heroicon-o-exclamation-triangle` (default)
-- `heroicon-o-bug-ant`
-- `heroicon-o-chat-bubble-left-right`
-- `heroicon-o-light-bulb`
-- `heroicon-o-megaphone`
-
 ### Issue Types
 
-The package automatically fetches all available issue types from your Jira project. This ensures that the feedback form always shows the correct issue types configured in your Jira instance.
+Issue types are automatically fetched from Jira and cached for 1 hour.
 
-#### Filtering Issue Types
-
-You can control which issue types appear in the feedback form using two approaches:
-
-**1. Whitelist (Allowed Types)**
-
-Show only specific issue types by setting `allowed_types`:
-
+**Filter with whitelist:**
 ```php
+// config/filament-jira-feedback.php
 'issue' => [
-    'allowed_types' => ['Bug', 'Story', 'Task'], // Only show these types
-    'excluded_types' => [], // Ignored when allowed_types is set
-    // ...
+    'allowed_types' => ['Bug', 'Story', 'Task'],
 ],
 ```
 
-**2. Blacklist (Excluded Types)**
-
-Hide specific issue types while showing all others:
-
+**Filter with blacklist:**
 ```php
 'issue' => [
-    'allowed_types' => null, // Must be null for exclusions to work
-    'excluded_types' => ['Epic', 'Sub-task'], // Hide these types
-    // ...
-],
-```
-
-**Note:** If `allowed_types` is set, `excluded_types` is ignored. Set `allowed_types` to `null` to use exclusions instead.
-
-#### Adding Custom Descriptions
-
-You can optionally add helpful descriptions to your issue types to guide users in selecting the right type. These descriptions appear in the dropdown as `"Issue Type - Description"`.
-
-Edit `config/filament-jira-feedback.php`:
-
-```php
-'issue' => [
-    // Filtering (optional)
     'allowed_types' => null,
-    'excluded_types' => [],
+    'excluded_types' => ['Epic', 'Sub-task'],
+],
+```
 
-    // Custom descriptions for issue types (optional)
-    // The keys should match the issue type names from your Jira project
+**Add descriptions:**
+```php
+'issue' => [
     'type_descriptions' => [
         'Bug' => 'Report a software defect or error',
         'Task' => 'Request a general task or work item',
         'Story' => 'Request a new feature or enhancement',
-        'Epic' => 'Define a large body of work or initiative',
-        'Service Request' => 'Request IT service or support',
-        'Ask a question' => 'Get help, information, or clarification',
     ],
-    'default_priority' => 'Medium',
 ],
 ```
 
-**How it works:**
-- Issue types are fetched dynamically from Jira and cached for 1 hour
-- Filtering is applied before displaying the types
-- If a description is configured for an issue type, it displays as: `"Bug - Report a software defect or error"`
-- If no description is configured, the issue type displays as just: `"Bug"`
-- All filtered issue types will appear, regardless of whether they have descriptions
-
-**Note:** Issue type names are case-sensitive and must exactly match the names in your Jira project.
-
-### User Context
-
-If your users have a `project_key` field (or any custom field), include it in the issue summary:
-
-```php
-// config/filament-jira-feedback.php
-'user_context' => [
-    'include_project_key' => true,
-    'project_key_field' => 'project_key',
-],
-```
-
-This will prefix the issue summary with `[PROJECT_KEY]` for authenticated users.
+Descriptions display as: `"Bug - Report a software defect or error"`
 
 ### Conditional Display
 
-Show the banner only to specific users or on certain conditions using render hooks:
-
+Show banner only to specific users:
 ```php
-// In your Panel Provider
 ->renderHook(
     PanelsRenderHook::BODY_START,
     fn (): string => auth()->user()?->hasRole('beta-tester')
@@ -425,148 +185,34 @@ Show the banner only to specific users or on certain conditions using render hoo
 )
 ```
 
-**Other examples:**
+### User Context
 
-Only show to administrators:
+Include user's project key in issue summary:
 ```php
-->renderHook(
-    PanelsRenderHook::BODY_START,
-    fn (): string => auth()->user()?->can('view-feedback-banner')
-        ? Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
-        : ''
-)
-```
-
-Show only on specific pages:
-```php
-->renderHook(
-    PanelsRenderHook::BODY_START,
-    fn (): string => request()->routeIs('filament.app.pages.dashboard')
-        ? Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
-        : ''
-)
-```
-
-Show based on environment:
-```php
-->renderHook(
-    PanelsRenderHook::BODY_START,
-    fn (): string => app()->environment(['staging', 'beta'])
-        ? Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
-        : ''
-)
-```
-
-### Publishing Views
-
-To customize the widget appearance:
-
-```bash
-php artisan vendor:publish --tag=filament-jira-feedback-views
-```
-
-Views will be copied to `resources/views/vendor/filament-jira-feedback/`.
-
-## Configuration Reference
-
-### Banner Configuration
-
-```php
-'banner' => [
-    'message' => 'Your custom message',
-    'button_label' => 'Submit Feedback',
-    'color' => 'warning', // danger, warning, success, info, primary, secondary, gray
-    'icon' => 'heroicon-o-exclamation-triangle',
+'user_context' => [
+    'include_project_key' => true,
+    'project_key_field' => 'project_key',
 ],
 ```
 
-### Modal Configuration
-
-```php
-'modal' => [
-    'heading' => 'Submit Feedback',
-    'description' => 'Help us improve the application.',
-    'submit_button_label' => 'Submit Feedback',
-    'cancel_button_label' => 'Cancel',
-    'width' => 'lg', // xs, sm, md, lg, xl, 2xl, etc.
-],
-```
-
-### Widget Configuration
-
-```php
-'widget' => [
-    'enabled' => true,
-    'sort' => -100, // Display at the top
-],
-```
-
-### Validation Rules
-
-```php
-'validation' => [
-    'summary_max_length' => 200,
-    'description_max_length' => 2000,
-],
-```
-
-## How It Works
-
-1. User clicks the "Submit Feedback" button in the banner
-2. A Filament modal opens with a form (using Filament Form Builder)
-3. User fills in:
-   - Issue type (Bug, Task, Story, etc.)
-   - Title (summary)
-   - Description
-4. On submission:
-   - Input is validated
-   - Description is converted to ADF format
-   - A Jira issue is created via the Jira REST API
-   - User context is included (if authenticated)
-   - A Filament notification confirms success or shows errors
-5. The created Jira issue key is displayed to the user
-
-## Differences from Standard Laravel Package
-
-If you're familiar with the standard Laravel version, here are the key differences:
-
-| Feature | Standard Laravel | Filament Version |
-|---------|-----------------|------------------|
-| UI Framework | Alpine.js + Tailwind | Filament Components |
-| Forms | HTML Forms | Filament Form Builder |
-| Modals | Custom Alpine.js | Filament Actions & Modals |
-| Notifications | JavaScript alerts | Filament Notifications |
-| Styling | Manual Tailwind | Filament Theme System |
-| Dark Mode | Not supported | Automatic support |
-| Integration | Manual Blade component | Auto-positioned via Render Hooks |
+This prefixes summaries with `[PROJECT_KEY]`.
 
 ## Troubleshooting
 
-### Banner doesn't appear
+**Banner doesn't appear:**
+- Check `FILAMENT_JIRA_FEEDBACK_ENABLED=true` in `.env`
+- Clear cache: `php artisan config:clear && php artisan filament:cache-components`
 
-- Check that `FILAMENT_JIRA_FEEDBACK_ENABLED=true` in `.env`
-- The banner auto-registers at the top of the page by default - no manual registration needed
-- If you disabled auto-registration, ensure you've added a render hook in your Panel Provider
-- Clear cache: `php artisan filament:cache-components` and `php artisan config:clear`
-
-### Feedback submission fails
-
+**Feedback submission fails:**
 - Verify Jira credentials are correct
-- Check that the Jira project key exists
-- Ensure your Jira user has permission to create issues
+- Check that the project key exists
+- Ensure your Jira user has create issue permissions
 - Check `storage/logs/laravel.log` for detailed errors
 
-### Issue types not working
-
-- Ensure the issue types exist in your Jira project
-- Check your Jira project settings for available issue types
-- Clear Laravel config cache if descriptions aren't showing: `php artisan config:clear`
-- Issue types are cached for 1 hour - wait or clear application cache: `php artisan cache:clear`
-
-### Styling looks off
-
-- Clear Filament cache: `php artisan filament:cache-components`
-- Ensure you're using FilamentPHP v3
+**Issue types not working:**
+- Issue types are cached for 1 hour - clear cache: `php artisan cache:clear`
+- Verify issue types exist in your Jira project
+- Issue type names are case-sensitive
 
 ## Contributing
 
@@ -574,5 +220,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This package is open-sourced software licensed under the [MIT licence](LICENSE.md).
-
+This package is open-sourced software licensed under the [MIT license](LICENSE.md).

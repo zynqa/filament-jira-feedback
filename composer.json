@@ -1,6 +1,6 @@
 {
   "name": "zynqa/filament-jira-feedback",
-  "description": "A FilamentPHP v3 package to collect user feedback and automatically create Jira issues",
+  "description": "A FilamentPHP package to collect user feedback and automatically create Jira issues",
   "type": "library",
   "license": "MIT",
   "keywords": [

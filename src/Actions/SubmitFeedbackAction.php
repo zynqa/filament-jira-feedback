@@ -30,7 +30,9 @@ class SubmitFeedbackAction
             ->form([
                 Select::make('issue_type')
                     ->label('Issue Type')
-                    ->options(config('filament-jira-feedback.issue.types', []))
+                    ->options(function (JiraFeedbackService $jiraService): array {
+                        return self::getIssueTypeOptions($jiraService);
+                    })
                     ->required()
                     ->native(false)
                     ->placeholder('Select issue type'),
@@ -153,6 +155,50 @@ class SubmitFeedbackAction
                         ->send();
                 }
             });
+    }
+
+    /**
+     * Get issue type options from Jira and merge with configured descriptions.
+     *
+     * @return array<string, string>
+     */
+    protected static function getIssueTypeOptions(JiraFeedbackService $jiraService): array
+    {
+        try {
+            // Fetch issue types from Jira
+            $jiraIssueTypes = $jiraService->getProjectIssueTypes();
+
+            // Get configured descriptions
+            $descriptions = config('filament-jira-feedback.issue.type_descriptions', []);
+
+            // Build options array with descriptions
+            $options = [];
+            foreach ($jiraIssueTypes as $typeName => $typeId) {
+                if (isset($descriptions[$typeName])) {
+                    // Use configured description
+                    $options[$typeName] = "{$typeName} - {$descriptions[$typeName]}";
+                } else {
+                    // Use just the type name
+                    $options[$typeName] = $typeName;
+                }
+            }
+
+            return $options;
+        } catch (Exception $e) {
+            // Log the error and fall back to configured types
+            Log::error('Failed to fetch Jira issue types, falling back to config', [
+                'error' => $e->getMessage(),
+            ]);
+
+            // Fallback to configured descriptions
+            $descriptions = config('filament-jira-feedback.issue.type_descriptions', []);
+            $options = [];
+            foreach ($descriptions as $typeName => $description) {
+                $options[$typeName] = "{$typeName} - {$description}";
+            }
+
+            return $options;
+        }
     }
 
     /**

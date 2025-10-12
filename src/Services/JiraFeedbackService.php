@@ -7,6 +7,7 @@ namespace Zynqa\FilamentJiraFeedback\Services;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class JiraFeedbackService
@@ -152,5 +153,57 @@ class JiraFeedbackService
     public function getProjectKey(): string
     {
         return $this->projectKey;
+    }
+
+    /**
+     * Get issue types available for the configured project.
+     *
+     * @return array<string, string> Array of issue type names and IDs
+     *
+     * @throws Exception
+     */
+    public function getProjectIssueTypes(): array
+    {
+        $cacheKey = "jira_issue_types_{$this->projectKey}";
+        $cacheDuration = 3600; // Cache for 1 hour
+
+        return Cache::remember($cacheKey, $cacheDuration, function () {
+            try {
+                $response = $this->client->get("rest/api/3/project/{$this->projectKey}");
+
+                $body = (string) $response->getBody();
+                $result = json_decode($body, true);
+
+                if (! is_array($result) || ! isset($result['issueTypes'])) {
+                    throw new Exception('Invalid response from Jira API');
+                }
+
+                $issueTypes = [];
+                foreach ($result['issueTypes'] as $issueType) {
+                    // Only include non-subtask issue types
+                    if (! isset($issueType['subtask']) || ! $issueType['subtask']) {
+                        $issueTypes[$issueType['name']] = $issueType['id'];
+                    }
+                }
+
+                return $issueTypes;
+            } catch (GuzzleException $e) {
+                Log::error('Failed to fetch Jira issue types', [
+                    'project_key' => $this->projectKey,
+                    'message' => $e->getMessage(),
+                ]);
+
+                throw new Exception('Failed to fetch issue types: '.$e->getMessage(), 0, $e);
+            }
+        });
+    }
+
+    /**
+     * Clear the cached issue types for the configured project.
+     */
+    public function clearIssueTypesCache(): void
+    {
+        $cacheKey = "jira_issue_types_{$this->projectKey}";
+        Cache::forget($cacheKey);
     }
 }

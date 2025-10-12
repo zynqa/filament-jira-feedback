@@ -234,24 +234,37 @@ Common options:
 
 ### Issue Types
 
-By default, the package supports these issue types:
-- **Bug**: Report a software defect
-- **Task**: Request a general task
-- **Story**: Request a new feature or enhancement
-- **Ask a question**: Get help or ask for information
+The package automatically fetches all available issue types from your Jira project. This ensures that the feedback form always shows the correct issue types configured in your Jira instance.
 
-Customize in `config/filament-jira-feedback.php`:
+#### Adding Custom Descriptions
+
+You can optionally add helpful descriptions to your issue types to guide users in selecting the right type. These descriptions appear in the dropdown as `"Issue Type - Description"`.
+
+Edit `config/filament-jira-feedback.php`:
 
 ```php
 'issue' => [
-    'types' => [
-        'Bug' => 'Bug - Report a software defect',
-        'Improvement' => 'Improvement - Suggest an enhancement',
-        'Question' => 'Question - Ask for help',
+    // Custom descriptions for issue types (optional)
+    // The keys should match the issue type names from your Jira project
+    'type_descriptions' => [
+        'Bug' => 'Report a software defect or error',
+        'Task' => 'Request a general task or work item',
+        'Story' => 'Request a new feature or enhancement',
+        'Epic' => 'Define a large body of work or initiative',
+        'Service Request' => 'Request IT service or support',
+        'Ask a question' => 'Get help, information, or clarification',
     ],
     'default_priority' => 'Medium',
 ],
 ```
+
+**How it works:**
+- Issue types are fetched dynamically from Jira and cached for 1 hour
+- If a description is configured for an issue type, it displays as: `"Bug - Report a software defect or error"`
+- If no description is configured, the issue type displays as just: `"Bug"`
+- All issue types from your Jira project will appear, regardless of whether they have descriptions
+
+**Note:** Issue type names are case-sensitive and must exactly match the names in your Jira project.
 
 ### User Context
 
@@ -393,6 +406,8 @@ If you're familiar with the standard Laravel version, here are the key differenc
 
 - Ensure the issue types exist in your Jira project
 - Check your Jira project settings for available issue types
+- Clear Laravel config cache if descriptions aren't showing: `php artisan config:clear`
+- Issue types are cached for 1 hour - wait or clear application cache: `php artisan cache:clear`
 
 ### Styling looks off
 

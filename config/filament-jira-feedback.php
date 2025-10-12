@@ -36,14 +36,25 @@ return [
     |--------------------------------------------------------------------------
     |
     | Configure the default settings for issues created from feedback.
+    | Issue types are fetched dynamically from Jira, but you can provide
+    | custom descriptions for each type below.
     |
     */
     'issue' => [
-        'types' => [
-            'Bug' => 'Bug - Report a software defect',
-            'Task' => 'Task - Request a general task',
-            'Story' => 'Story - Request a new feature or enhancement',
-            'Ask a question' => 'Ask a question - Get help or ask for information',
+        // Custom descriptions for issue types (optional)
+        // The keys should match the issue type names from your Jira project
+        'type_descriptions' => [
+            'Bug' => 'Report a software defect or error',
+            'Task' => 'Request a general task or work item',
+            'Story' => 'Request a new feature or enhancement',
+            'Epic' => 'Define a large body of work or initiative',
+            'Service Request' => 'Request IT service or support',
+            'Service Request with Approvals' => 'Request requiring management approval',
+            'Submit a request or incident' => 'Report an issue or submit a request',
+            'Ask a question' => 'Get help, information, or clarification',
+            'Emailed request' => 'Request submitted via email',
+            'Request' => 'General request or inquiry',
+            'Employee' => 'Employee-related matter or HR issue',
         ],
         'default_priority' => env('FILAMENT_JIRA_FEEDBACK_DEFAULT_PRIORITY', 'Medium'),
     ],

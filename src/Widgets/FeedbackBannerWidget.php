@@ -5,11 +5,17 @@ declare(strict_types=1);
 namespace Zynqa\FilamentJiraFeedback\Widgets;
 
 use Filament\Actions\Action;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
 use Filament\Widgets\Widget;
 use Zynqa\FilamentJiraFeedback\Actions\SubmitFeedbackAction;
 
-class FeedbackBannerWidget extends Widget
+class FeedbackBannerWidget extends Widget implements HasActions, HasForms
 {
+    use InteractsWithActions;
+    use InteractsWithForms;
     protected static string $view = 'filament-jira-feedback::widgets.feedback-banner';
 
     protected static ?int $sort = -100;
@@ -27,11 +33,9 @@ class FeedbackBannerWidget extends Widget
         return $this->columnSpan;
     }
 
-    protected function getHeaderActions(): array
+    public function submitFeedbackAction(): Action
     {
-        return [
-            SubmitFeedbackAction::make(),
-        ];
+        return SubmitFeedbackAction::make();
     }
 
     public function getBannerMessage(): string

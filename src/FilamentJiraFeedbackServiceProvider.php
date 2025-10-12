@@ -54,11 +54,14 @@ class FilamentJiraFeedbackServiceProvider extends ServiceProvider
         // Register Livewire component
         Livewire::component('filament-jira-feedback-banner', FeedbackBanner::class);
 
-        // Register render hook to display the banner at the top of all pages
+        // Register the widget as a Livewire component
+        Livewire::component('filament-jira-feedback-banner-widget', \Zynqa\FilamentJiraFeedback\Widgets\FeedbackBannerWidget::class);
+
+        // Register the widget globally on all pages using a render hook
         if (config('filament-jira-feedback.enabled', true)) {
             \Filament\Support\Facades\FilamentView::registerRenderHook(
                 PanelsRenderHook::BODY_START,
-                fn (): string => Blade::render('<livewire:filament-jira-feedback-banner />')
+                fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
             );
         }
     }

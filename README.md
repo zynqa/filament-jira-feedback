@@ -5,7 +5,8 @@ A **FilamentPHP** package to collect user feedback and automatically create Jira
 ## Features
 
 - **Filament-Native**: Built specifically for FilamentPHP v3 using Filament components
-- **Widget-Based**: Display a dismissible feedback banner across your Filament panels
+- **Auto-Positioned**: Automatically displays at the top of pages using Filament render hooks
+- **Flexible Positioning**: Easily customize banner position using render hooks
 - **Filament Actions**: Uses Filament's modal and form system for a seamless experience
 - **Filament Notifications**: Beautiful success/error notifications that match your theme
 - **Dark Mode Support**: Automatically adapts to Filament's dark mode
@@ -72,24 +73,13 @@ FILAMENT_JIRA_FEEDBACK_DEFAULT_PRIORITY=Medium
 4. Give it a name and copy the token
 5. Add it to your `.env` file as `FILAMENT_JIRA_FEEDBACK_API_TOKEN`
 
-### 5. Register the Widget
+### 5. Banner Positioning (Automatic)
 
-Add the widget to your Filament Panel Provider (usually `app/Providers/Filament/AdminPanelProvider.php`):
+**The feedback banner automatically appears at the top of all Filament pages** using Filament's render hooks. No additional registration is required!
 
-```php
-use Zynqa\FilamentJiraFeedback\Widgets\FeedbackBannerWidget;
+The package registers itself using `PanelsRenderHook::BODY_START` by default, which positions the banner at the very top of the page body.
 
-public function panel(Panel $panel): Panel
-{
-    return $panel
-        // ... other configuration
-        ->widgets([
-            FeedbackBannerWidget::class,
-        ]);
-}
-```
-
-That's it! The feedback banner will now appear at the top of your Filament dashboard.
+If you want to customize the position, see the "Customizing Banner Position" section below.
 
 ## Usage
 
@@ -121,18 +111,124 @@ public function getActions(): array
 }
 ```
 
-### Customizing the Widget Placement
+### Customizing Banner Position
 
-Control where the widget appears by configuring it in your Panel Provider:
+By default, the banner appears at the very top of the page body. You can customize this position using Filament's render hooks.
+
+#### Step 1: Disable Auto-Registration
+
+First, disable the automatic registration by setting `enabled` to `false` in your config:
 
 ```php
-->widgets([
-    FeedbackBannerWidget::class,
-])
-->widgetsSidebar([
-    // Or place it in the sidebar
-    FeedbackBannerWidget::class,
-])
+// config/filament-jira-feedback.php
+'enabled' => false,
+```
+
+Or via `.env`:
+
+```env
+FILAMENT_JIRA_FEEDBACK_ENABLED=false
+```
+
+#### Step 2: Register at Custom Position
+
+In your Panel Provider (e.g., `app/Providers/Filament/AppPanelProvider.php`), register the banner at your desired position:
+
+```php
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
+use Illuminate\Support\Facades\Blade;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        // ... your panel configuration
+        ->renderHook(
+            PanelsRenderHook::BODY_START, // or any other hook
+            fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
+        );
+}
+```
+
+#### Available Render Hook Positions
+
+Filament provides several render hooks for positioning content:
+
+**Page Structure Hooks:**
+- `PanelsRenderHook::BODY_START` - Top of page body (default)
+- `PanelsRenderHook::BODY_END` - Bottom of page body
+- `PanelsRenderHook::CONTENT_START` - Top of main content area
+- `PanelsRenderHook::CONTENT_END` - Bottom of main content area
+
+**Header Hooks:**
+- `PanelsRenderHook::TOPBAR_START` - Start of top navigation bar
+- `PanelsRenderHook::TOPBAR_END` - End of top navigation bar
+- `PanelsRenderHook::USER_MENU_BEFORE` - Before user menu dropdown
+- `PanelsRenderHook::USER_MENU_AFTER` - After user menu dropdown
+
+**Sidebar Hooks:**
+- `PanelsRenderHook::SIDEBAR_NAV_START` - Top of sidebar navigation
+- `PanelsRenderHook::SIDEBAR_NAV_END` - Bottom of sidebar navigation
+
+**Footer Hooks:**
+- `PanelsRenderHook::FOOTER` - Page footer area
+
+#### Common Placement Examples
+
+**Position below the top navigation bar:**
+
+```php
+->renderHook(
+    PanelsRenderHook::CONTENT_START,
+    fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
+)
+```
+
+**Position at the bottom of the page:**
+
+```php
+->renderHook(
+    PanelsRenderHook::BODY_END,
+    fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
+)
+```
+
+**Position in the sidebar navigation:**
+
+```php
+->renderHook(
+    PanelsRenderHook::SIDEBAR_NAV_END,
+    fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
+)
+```
+
+**Multiple positions (e.g., both top and bottom):**
+
+```php
+public function panel(Panel $panel): Panel
+{
+    return $panel
+        // ... your configuration
+        ->renderHook(
+            PanelsRenderHook::BODY_START,
+            fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
+        )
+        ->renderHook(
+            PanelsRenderHook::FOOTER,
+            fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
+        );
+}
+```
+
+**Conditional positioning based on user role:**
+
+```php
+->renderHook(
+    PanelsRenderHook::CONTENT_START,
+    fn (): string => auth()->user()?->hasRole('beta-tester')
+        ? Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
+        : ''
+)
 ```
 
 ### Customizing Colors
@@ -317,26 +413,48 @@ This will prefix the issue summary with `[PROJECT_KEY]` for authenticated users.
 
 ### Conditional Display
 
-Show the widget only to specific users:
+Show the banner only to specific users or on certain conditions using render hooks:
 
 ```php
-use Zynqa\FilamentJiraFeedback\Widgets\FeedbackBannerWidget;
-
-class CustomFeedbackWidget extends FeedbackBannerWidget
-{
-    public static function canView(): bool
-    {
-        return parent::canView() && auth()->user()->isBetaTester();
-    }
-}
+// In your Panel Provider
+->renderHook(
+    PanelsRenderHook::BODY_START,
+    fn (): string => auth()->user()?->hasRole('beta-tester')
+        ? Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
+        : ''
+)
 ```
 
-Then register your custom widget instead:
+**Other examples:**
 
+Only show to administrators:
 ```php
-->widgets([
-    CustomFeedbackWidget::class,
-])
+->renderHook(
+    PanelsRenderHook::BODY_START,
+    fn (): string => auth()->user()?->can('view-feedback-banner')
+        ? Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
+        : ''
+)
+```
+
+Show only on specific pages:
+```php
+->renderHook(
+    PanelsRenderHook::BODY_START,
+    fn (): string => request()->routeIs('filament.app.pages.dashboard')
+        ? Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
+        : ''
+)
+```
+
+Show based on environment:
+```php
+->renderHook(
+    PanelsRenderHook::BODY_START,
+    fn (): string => app()->environment(['staging', 'beta'])
+        ? Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
+        : ''
+)
 ```
 
 ### Publishing Views
@@ -420,15 +538,16 @@ If you're familiar with the standard Laravel version, here are the key differenc
 | Notifications | JavaScript alerts | Filament Notifications |
 | Styling | Manual Tailwind | Filament Theme System |
 | Dark Mode | Not supported | Automatic support |
-| Integration | Blade component | Filament Widget |
+| Integration | Manual Blade component | Auto-positioned via Render Hooks |
 
 ## Troubleshooting
 
-### Widget doesn't appear
+### Banner doesn't appear
 
 - Check that `FILAMENT_JIRA_FEEDBACK_ENABLED=true` in `.env`
-- Ensure the widget is registered in your Panel Provider
-- Clear cache: `php artisan filament:cache-components`
+- The banner auto-registers at the top of the page by default - no manual registration needed
+- If you disabled auto-registration, ensure you've added a render hook in your Panel Provider
+- Clear cache: `php artisan filament:cache-components` and `php artisan config:clear`
 
 ### Feedback submission fails
 

@@ -14,7 +14,7 @@
             </p>
         </div>
 
-        <div class="flex-shrink-0">
+        <div class="flex-shrink-0 pr-4">
             {{ $this->submitFeedbackAction }}
         </div>
     </div>

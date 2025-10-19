@@ -16,7 +16,7 @@ class FeedbackBannerWidget extends Widget implements HasActions, HasForms
 {
     use InteractsWithActions;
     use InteractsWithForms;
-    protected static string $view = 'filament-jira-feedback::widgets.feedback-banner';
+    protected string $view = 'filament-jira-feedback::widgets.feedback-banner';
 
     protected static ?int $sort = -100;
 

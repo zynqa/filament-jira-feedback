@@ -5,6 +5,7 @@
                 <x-filament::icon
                     :icon="$this->getBannerIcon()"
                     :class="'w-6 h-6 text-' . $this->getBannerColor() . '-500'"
+                    style="flex-shrink: 0 !important;"
                 />
             </div>
 

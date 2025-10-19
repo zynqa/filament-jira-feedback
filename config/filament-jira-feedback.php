@@ -119,7 +119,7 @@ return [
     */
     'modal' => [
         'heading' => 'Submit Feedback',
-        'description' => 'Help us improve the application by sharing your feedback.',
+        'description' => 'Help us improve this website by sharing your feedback.',
         'submit_button_label' => 'Submit Feedback',
         'cancel_button_label' => 'Cancel',
         'width' => 'lg', // xs, sm, md, lg, xl, 2xl, 3xl, 4xl, 5xl, 6xl, 7xl, screen

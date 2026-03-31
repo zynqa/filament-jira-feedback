@@ -24,10 +24,19 @@ class JiraFeedbackService
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('filament-jira-feedback.jira.url'), '/');
-        $this->email = config('filament-jira-feedback.jira.email');
-        $this->apiToken = config('filament-jira-feedback.jira.api_token');
-        $this->projectKey = config('filament-jira-feedback.jira.project_key');
+        $this->baseUrl = rtrim(
+            (string) (config('filament-jira-feedback.jira.url')
+                ?? config('services.jira.url')
+                ?? ''),
+            '/'
+        );
+        $this->email = (string) (config('filament-jira-feedback.jira.email')
+            ?? config('services.jira.email')
+            ?? '');
+        $this->apiToken = (string) (config('filament-jira-feedback.jira.api_token')
+            ?? config('services.jira.api_token')
+            ?? '');
+        $this->projectKey = (string) (config('filament-jira-feedback.jira.project_key') ?? '');
 
         $this->client = new Client([
             'base_uri' => $this->baseUrl,
@@ -38,6 +47,21 @@ class JiraFeedbackService
             ],
             'timeout' => 30,
         ]);
+    }
+
+    public function getBaseUrl(): string
+    {
+        return $this->baseUrl;
+    }
+
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    public function getApiToken(): string
+    {
+        return $this->apiToken;
     }
 
     /**
@@ -71,12 +95,15 @@ class JiraFeedbackService
 
             return $result;
         } catch (GuzzleException $e) {
+            $jiraError = $this->extractJiraErrorMessage($e);
+
             Log::error('Jira API error', [
                 'message' => $e->getMessage(),
+                'jira_error' => $jiraError,
                 'issue_data' => $issueData,
             ]);
 
-            throw new Exception('Failed to create Jira issue: '.$e->getMessage(), 0, $e);
+            throw new Exception($jiraError ?: 'Failed to create Jira issue: '.$e->getMessage(), 0, $e);
         }
     }
 
@@ -205,5 +232,33 @@ class JiraFeedbackService
     {
         $cacheKey = "jira_issue_types_{$this->projectKey}";
         Cache::forget($cacheKey);
+    }
+
+    /**
+     * Extract a human-readable error message from a Guzzle exception.
+     */
+    protected function extractJiraErrorMessage(GuzzleException $e): ?string
+    {
+        if (! method_exists($e, 'getResponse') || ! $e->getResponse()) {
+            return null;
+        }
+
+        $body = (string) $e->getResponse()->getBody();
+        $data = json_decode($body, true);
+
+        if (! is_array($data)) {
+            return null;
+        }
+
+        // Jira returns errors in 'errorMessages' array or 'errors' object
+        if (! empty($data['errorMessages'])) {
+            return implode('. ', $data['errorMessages']);
+        }
+
+        if (! empty($data['errors'])) {
+            return implode('. ', array_values($data['errors']));
+        }
+
+        return null;
     }
 }

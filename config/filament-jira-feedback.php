@@ -24,9 +24,9 @@ return [
     |
     */
     'jira' => [
-        'url' => env('FILAMENT_JIRA_FEEDBACK_URL', 'https://your-domain.atlassian.net'),
-        'email' => env('FILAMENT_JIRA_FEEDBACK_EMAIL'),
-        'api_token' => env('FILAMENT_JIRA_FEEDBACK_API_TOKEN'),
+        'url' => env('FILAMENT_JIRA_FEEDBACK_URL', env('ATLASSIAN_API_URL', 'https://your-domain.atlassian.net')),
+        'email' => env('FILAMENT_JIRA_FEEDBACK_EMAIL', env('JIRA_EMAIL')),
+        'api_token' => env('FILAMENT_JIRA_FEEDBACK_API_TOKEN', env('JIRA_API_TOKEN')),
         'project_key' => env('FILAMENT_JIRA_FEEDBACK_PROJECT_KEY', 'FEEDBACK'),
     ],
 

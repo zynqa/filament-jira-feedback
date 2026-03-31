@@ -150,7 +150,7 @@ class SubmitFeedbackAction
 
                     Notification::make()
                         ->title('Submission Failed')
-                        ->body('Failed to submit feedback. Please try again later.')
+                        ->body($e->getMessage() ?: 'Failed to submit feedback. Please try again later.')
                         ->danger()
                         ->send();
                 }

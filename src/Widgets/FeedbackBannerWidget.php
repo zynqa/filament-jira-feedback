@@ -21,7 +21,7 @@ class FeedbackBannerWidget extends Widget implements HasActions, HasForms
 
     protected static ?int $sort = -100;
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public static function canView(): bool
     {
@@ -29,7 +29,7 @@ class FeedbackBannerWidget extends Widget implements HasActions, HasForms
             && config('filament-jira-feedback.widget.enabled', true);
     }
 
-    public function getColumnSpan(): string | array | int
+    public function getColumnSpan(): string|array|int
     {
         return $this->columnSpan;
     }

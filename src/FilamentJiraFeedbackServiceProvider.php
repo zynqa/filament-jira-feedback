@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Zynqa\FilamentJiraFeedback;
 
-use Filament\Panel;
-use Filament\Support\Assets\Asset;
-use Filament\Support\Facades\FilamentAsset;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
@@ -29,7 +26,7 @@ class FilamentJiraFeedbackServiceProvider extends ServiceProvider
 
         // Register the JiraFeedbackService as a singleton
         $this->app->singleton(JiraFeedbackService::class, function ($app) {
-            return new JiraFeedbackService();
+            return new JiraFeedbackService;
         });
     }
 

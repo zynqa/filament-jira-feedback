@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Zynqa\FilamentJiraFeedback;
 
+use Filament\Support\Facades\FilamentView;
 use Filament\View\PanelsRenderHook;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
 use Zynqa\FilamentJiraFeedback\Livewire\FeedbackBanner;
 use Zynqa\FilamentJiraFeedback\Services\JiraFeedbackService;
+use Zynqa\FilamentJiraFeedback\Widgets\FeedbackBannerWidget;
 
 class FilamentJiraFeedbackServiceProvider extends ServiceProvider
 {
@@ -52,11 +54,11 @@ class FilamentJiraFeedbackServiceProvider extends ServiceProvider
         Livewire::component('filament-jira-feedback-banner', FeedbackBanner::class);
 
         // Register the widget as a Livewire component
-        Livewire::component('filament-jira-feedback-banner-widget', \Zynqa\FilamentJiraFeedback\Widgets\FeedbackBannerWidget::class);
+        Livewire::component('filament-jira-feedback-banner-widget', FeedbackBannerWidget::class);
 
         // Register the widget globally on all pages using a render hook
         if (config('filament-jira-feedback.enabled', true)) {
-            \Filament\Support\Facades\FilamentView::registerRenderHook(
+            FilamentView::registerRenderHook(
                 PanelsRenderHook::BODY_START,
                 fn (): string => Blade::render('@livewire(\'filament-jira-feedback-banner-widget\')')
             );

@@ -50,10 +50,10 @@ class FeedbackBanner extends Component implements HasActions, HasForms
         if ($customColors['background'] || $customColors['background_dark']) {
             // Use custom colors
             return [
-                'bg' => trim(($customColors['background'] ?? '') . ' ' . ($customColors['background_dark'] ? 'dark:' . $customColors['background_dark'] : '')),
-                'text' => trim(($customColors['text'] ?? '') . ' ' . ($customColors['text_dark'] ? 'dark:' . $customColors['text_dark'] : '')),
-                'border' => trim(($customColors['border'] ?? '') . ' ' . ($customColors['border_dark'] ? 'dark:' . $customColors['border_dark'] : '')),
-                'icon' => trim(($customColors['icon'] ?? '') . ' ' . ($customColors['icon_dark'] ? 'dark:' . $customColors['icon_dark'] : '')),
+                'bg' => trim(($customColors['background'] ?? '').' '.($customColors['background_dark'] ? 'dark:'.$customColors['background_dark'] : '')),
+                'text' => trim(($customColors['text'] ?? '').' '.($customColors['text_dark'] ? 'dark:'.$customColors['text_dark'] : '')),
+                'border' => trim(($customColors['border'] ?? '').' '.($customColors['border_dark'] ? 'dark:'.$customColors['border_dark'] : '')),
+                'icon' => trim(($customColors['icon'] ?? '').' '.($customColors['icon_dark'] ? 'dark:'.$customColors['icon_dark'] : '')),
             ];
         }
 

@@ -27,7 +27,7 @@ class SubmitFeedbackAction
             ->modalSubmitActionLabel(config('filament-jira-feedback.modal.submit_button_label', 'Submit Feedback'))
             ->modalCancelActionLabel(config('filament-jira-feedback.modal.cancel_button_label', 'Cancel'))
             ->modalWidth(config('filament-jira-feedback.modal.width', 'lg'))
-            ->form([
+            ->schema([
                 Select::make('issue_type')
                     ->label('Issue Type')
                     ->options(function (JiraFeedbackService $jiraService): array {
@@ -148,9 +148,15 @@ class SubmitFeedbackAction
                         'form_data' => $data,
                     ]);
 
+                    // Surface what Jira actually said. JiraFeedbackService has already
+                    // reduced the response to a human-readable sentence ("You do not have
+                    // permission to create issues in this project."), which tells the user
+                    // whether this is worth retrying — the generic message never did.
+                    $reason = trim($e->getMessage());
+
                     Notification::make()
                         ->title('Submission Failed')
-                        ->body('Failed to submit feedback. Please try again later.')
+                        ->body($reason !== '' ? $reason : 'Failed to submit feedback. Please try again later.')
                         ->danger()
                         ->send();
                 }

@@ -7,6 +7,7 @@ namespace Zynqa\FilamentJiraFeedback\Services;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -22,14 +23,17 @@ class JiraFeedbackService
 
     protected string $projectKey;
 
-    public function __construct()
+    /**
+     * @param  Client|null  $client  Injectable for testing; built from config when omitted.
+     */
+    public function __construct(?Client $client = null)
     {
-        $this->baseUrl = rtrim(config('filament-jira-feedback.jira.url'), '/');
-        $this->email = config('filament-jira-feedback.jira.email');
-        $this->apiToken = config('filament-jira-feedback.jira.api_token');
-        $this->projectKey = config('filament-jira-feedback.jira.project_key');
+        $this->baseUrl = rtrim($this->resolveSetting('url'), '/');
+        $this->email = $this->resolveSetting('email');
+        $this->apiToken = $this->resolveSetting('api_token');
+        $this->projectKey = (string) config('filament-jira-feedback.jira.project_key', '');
 
-        $this->client = new Client([
+        $this->client = $client ?? new Client([
             'base_uri' => $this->baseUrl,
             'auth' => [$this->email, $this->apiToken],
             'headers' => [
@@ -38,6 +42,49 @@ class JiraFeedbackService
             ],
             'timeout' => 30,
         ]);
+    }
+
+    /**
+     * Resolve a Jira credential, preferring the feedback-specific value and falling back
+     * to the host application's own Jira credentials.
+     *
+     * The config file expresses this fallback through nested env() defaults, which only
+     * applies at config-load time. Resolving it here as well means the fallback still
+     * holds when the values are set at runtime, and that a null never reaches a string
+     * property — an unconfigured install should fail validateConfiguration(), not fatal
+     * in the constructor.
+     */
+    protected function resolveSetting(string $key): string
+    {
+        return (string) (
+            config("filament-jira-feedback.jira.{$key}")
+            ?? config("services.jira.{$key}")
+            ?? ''
+        );
+    }
+
+    /**
+     * Get the resolved Jira base URL.
+     */
+    public function getBaseUrl(): string
+    {
+        return $this->baseUrl;
+    }
+
+    /**
+     * Get the resolved Jira account email.
+     */
+    public function getEmail(): string
+    {
+        return $this->email;
+    }
+
+    /**
+     * Get the resolved Jira API token.
+     */
+    public function getApiToken(): string
+    {
+        return $this->apiToken;
     }
 
     /**
@@ -76,8 +123,51 @@ class JiraFeedbackService
                 'issue_data' => $issueData,
             ]);
 
+            // Jira explains refusals in the response body ("You do not have permission to
+            // create issues in this project."). Guzzle's own message is just the status
+            // line, so surfacing it alone tells the user nothing actionable.
+            $jiraMessage = $this->extractJiraErrorMessage($e);
+
+            if ($jiraMessage !== null) {
+                throw new Exception($jiraMessage, 0, $e);
+            }
+
             throw new Exception('Failed to create Jira issue: '.$e->getMessage(), 0, $e);
         }
+    }
+
+    /**
+     * Pull the human-readable error out of a Jira error response, if there is one.
+     *
+     * Returns null when the response is absent or carries no structured error, so the
+     * caller can fall back to a generic message.
+     */
+    protected function extractJiraErrorMessage(GuzzleException $e): ?string
+    {
+        if (! $e instanceof RequestException || ! $e->hasResponse()) {
+            return null;
+        }
+
+        $decoded = json_decode((string) $e->getResponse()->getBody(), true);
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        $errorMessages = $decoded['errorMessages'] ?? [];
+
+        if (is_array($errorMessages) && $errorMessages !== []) {
+            return (string) reset($errorMessages);
+        }
+
+        // Field-level failures arrive keyed by field name rather than as a flat list.
+        $errors = $decoded['errors'] ?? [];
+
+        if (is_array($errors) && $errors !== []) {
+            return (string) reset($errors);
+        }
+
+        return null;
     }
 
     /**
